@@ -121,8 +121,7 @@ async def on_message(message):
             await client.send_message(message.channel, "**I just don't know what went wrong!** \n Please enter your requested song id after the command. \n eg. `!request 14982` \n _Remember: you can search for the song with the `!search` command!_")
         else:
             if REQUESTS_ENABLED == True:
-                cursor = engine.cursor()
-                reqIP = "DISCORDAPP"
+                reqIP = "10.00.00.000"
                 reqSONGID = str(message.content)[9:]
                 reqUSERNAME = str(message.author.nick)
                 reqTIMESTAMP = str(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'))
@@ -146,6 +145,8 @@ async def on_message(message):
                     cursor = engine.cursor()
                     query = ("""INSERT INTO `requests` (`songID`, `username`, `userIP`, `message`, `requested`) VALUES (""" + str(reqSONGID) + """, '""" + reqUSERNAME + """', '""" + reqIP + """', '""" + reqMSG + """', '""" + reqTIMESTAMP + """');""")
                     cursor.execute(query)
+                    #await client.send_message(message.channel, str(cursor))
+                    #await client.send_message(message.channel, ''' ```''' + str(query) + '''``` ''')
                     await client.send_message(message.channel, "Good news " + reqUSERNAME + "! Your song of: **" + x + "** has been submitted! Rest assured, keep listening to the radio as your song might be played after the next few songs!")
             else:
                 await client.send_message(message.channel, "I'm sorry, but requests are disabled for the moment!")
