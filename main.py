@@ -164,4 +164,8 @@ async def on_message(message):
     elif message.content.startswith('!disconnectvoice'):
         if int(str(message.author.id)) in BOT_ADMINS:
             await v.disconnect()
-client.run(DISCORD_BOT_EMAIL, DISCORD_BOT_PASSWORD)
+
+if BOT_USE_EMAIL:
+    client.run(DISCORD_BOT_EMAIL, DISCORD_BOT_PASSWORD)
+else:
+    client.run(DISCORD_BOT_TOKEN)
