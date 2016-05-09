@@ -14,9 +14,18 @@ client = discord.Client()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('SilverleafBot')
 
-engine = mysql.connector.connect(user=MYSQL_USERNAME, password=MYSQL_PASSWORD, host=MYSQL_IP, port=MYSQL_PORT, database=MYSQL_DATABASE)
-logger.info('Connecting to database...')
-connection = engine.connect()
+def connectMySQL():
+    """ Connect to MySQL database """
+    try:
+        logger.info('Connecting to database...')
+        global engine
+        engine = mysql.connector.connect(user=MYSQL_USERNAME, password=MYSQL_PASSWORD, host=MYSQL_IP, port=MYSQL_PORT, database=MYSQL_DATABASE)
+        if engine.is_connected():
+            logger.info('Connected to MySQL')
+    except Error as e:
+        logger.info(e)
+
+connectMySQL()
 
 def getRadioMeta():
     response = urlopen('http://radio.pawprintradio.com/status-json.xsl')
@@ -84,6 +93,7 @@ async def on_message(message):
                 index = 1
         else:
             index = 1
+        connectMySQL()
         cursor = engine.cursor()
         cursorCount = engine.cursor(prepared=True)
         countQuery = ("SELECT COUNT(*) FROM songs")
@@ -105,6 +115,7 @@ async def on_message(message):
         if len(str(message.content)) == 7:
             await client.send_message(message.channel, "**I'm sorry, what was that? Didn't quite catch that.** \n Please enter your search query after the command. \n eg. `!search Rainbow Dash`")
         else:
+            connectMySQL()
             cursor = engine.cursor()
             query = str(message.content)[8:]
             command = ("SELECT ID, artist, title FROM songs WHERE `artist` COLLATE UTF8_GENERAL_CI LIKE '%%" + str(query) + "%%' OR `title` COLLATE UTF8_GENERAL_CI LIKE '%%" + str(query) + "%%' LIMIT 15")
@@ -123,9 +134,10 @@ async def on_message(message):
             if REQUESTS_ENABLED == True:
                 reqIP = "10.00.00.000"
                 reqSONGID = str(message.content)[9:]
-                reqUSERNAME = str(message.author.nick)
+                reqUSERNAME = str(message.author.name)
                 reqTIMESTAMP = str(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'))
                 reqMSG = ""
+                connectMySQL()
                 cursorSong = engine.cursor()
                 songQuery = ("SELECT ID, artist, title FROM songs WHERE `ID` LIKE  " + str(int(reqSONGID)))
                 cursorSong.execute(songQuery)
