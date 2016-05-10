@@ -152,7 +152,7 @@ async def on_message(message):
                     data = bytes( urllib.parse.urlencode( data ).encode() )
                     handler = urllib.request.urlopen( REQUESTS_POST_URL, data );
                     results = handler.read().decode( 'utf-8' )
-                    if str(results) == 1:
+                    if str(results) == "1":
                         await client.send_message(message.channel, "Good news " + reqUSERNAME + "! Your song of: **" + x + "** has been submitted! Rest assured, keep listening to the radio as your song might be played after the next few songs!")
                     else:
                         await client.send_message(message.channel, results)
