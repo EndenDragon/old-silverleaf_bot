@@ -9,6 +9,8 @@ MYSQL_DATABASE = "Cloudsdale"
 MYSQL_USERNAME = "root"
 MYSQL_PASSWORD = "verysecretmuchwow"
 
+REQUESTS_POST_URL = "localhost"
+
 REQUESTS_ENABLED = True
 
 BOT_ADMINS = [00000000000, 00000000001]

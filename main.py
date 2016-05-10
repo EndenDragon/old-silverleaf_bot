@@ -4,6 +4,7 @@ from discord import Game, Channel
 import asyncio
 import logging
 from urllib.request import urlopen
+import urllib.parse
 import json
 import mysql.connector
 import subprocess
@@ -132,11 +133,8 @@ async def on_message(message):
             await client.send_message(message.channel, "**I just don't know what went wrong!** \n Please enter your requested song id after the command. \n eg. `!request 14982` \n _Remember: you can search for the song with the `!search` command!_")
         else:
             if REQUESTS_ENABLED == True:
-                reqIP = "10.00.00.000"
                 reqSONGID = str(message.content)[9:]
                 reqUSERNAME = str(message.author.name)
-                reqTIMESTAMP = str(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'))
-                reqMSG = ""
                 connectMySQL()
                 cursorSong = engine.cursor()
                 songQuery = ("SELECT ID, artist, title FROM songs WHERE `ID` LIKE  " + str(int(reqSONGID)))
@@ -147,19 +145,17 @@ async def on_message(message):
                 if x == None:
                     await client.send_message(message.channel, "I'm sorry, this song does not exist in the database!")
                 else:
-                    cursorSong2 = engine.cursor()
-                    songQuery2 = ("""SELECT ID FROM queuelist WHERE `songID` LIKE """ + str(reqSONGID))
-                    cursorSong2.execute(songQuery2)
-                    for (ID) in cursorSong2:
-                        if str(ID) == str(reqSONGID):
-                            await client.send_message(message.channel, "The song you had requested is already in queue. Don't worry, as your song might be after within the next few songs.")
-                            return
-                    cursor = engine.cursor()
-                    query = ("""INSERT INTO `requests` (`songID`, `username`, `userIP`, `message`, `requested`) VALUES (""" + str(reqSONGID) + """, '""" + reqUSERNAME + """', '""" + reqIP + """', '""" + reqMSG + """', '""" + reqTIMESTAMP + """');""")
-                    cursor.execute(query)
-                    #await client.send_message(message.channel, str(cursor))
-                    #await client.send_message(message.channel, ''' ```''' + str(query) + '''``` ''')
-                    await client.send_message(message.channel, "Good news " + reqUSERNAME + "! Your song of: **" + x + "** has been submitted! Rest assured, keep listening to the radio as your song might be played after the next few songs!")
+                    data = {
+                        'reqSONGID' : reqSONGID,
+                        'reqUSERNAME' : reqUSERNAME
+                    }
+                    data = bytes( urllib.parse.urlencode( data ).encode() )
+                    handler = urllib.request.urlopen( REQUESTS_POST_URL, data );
+                    results = handler.read().decode( 'utf-8' )
+                    if str(results) == 1:
+                        await client.send_message(message.channel, "Good news " + reqUSERNAME + "! Your song of: **" + x + "** has been submitted! Rest assured, keep listening to the radio as your song might be played after the next few songs!")
+                    else:
+                        await client.send_message(message.channel, results)
             else:
                 await client.send_message(message.channel, "I'm sorry, but requests are disabled for the moment!")
     elif message.content.startswith('!togglerequests'):
