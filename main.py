@@ -26,8 +26,6 @@ def connectMySQL():
     except Error as e:
         logger.info(e)
 
-connectMySQL()
-
 def getRadioMeta():
     response = urlopen('http://radio.pawprintradio.com/status-json.xsl')
     xsl = response.read()
@@ -38,6 +36,7 @@ def getRadioMeta():
 
 @client.event
 async def on_ready():
+    connectMySQL()
     print('------')
     print('Logged in as')
     print(client.user.name)
@@ -53,6 +52,7 @@ async def on_ready():
 @client.event
 async def on_message(message):
     if message.content.startswith('!help') or message.content.startswith('!commands'):
+        await client.send_typing(message.channel)
         commands = """**List of commands:**
         `!help` - displays this help menu
         `!about` - general information about SilverleafBot
@@ -71,22 +71,26 @@ async def on_message(message):
         """
         await client.send_message(message.channel, commands)
     elif message.content.startswith('!about'):
+        await client.send_typing(message.channel)
         out = subprocess.getoutput("git rev-parse --short master")
-        about = """**SilverleafBot** by EndenDragon
+        about = """**Silverleaf 🤖** by EndenDragon
         Git revision: `{0}` | URL: https://git.mane-frame.com/EndenDragon/silverleaf_bot/commit/{0}
         Made with :heart: for PawPrintRadio.
         http://www.pawprintradio.com/
         """.format(out)
         await client.send_message(message.channel, about)
     elif message.content.startswith('!nowplaying') or message.content.startswith('!np'):
+        await client.send_typing(message.channel)
         mfr_json = getRadioMeta()
         text = "**Now Playing:** " + str(mfr_json["title"])
         await client.send_message(message.channel, text)
     elif message.content.startswith('!listeners'):
+        await client.send_typing(message.channel)
         mfr_json = getRadioMeta()
         text = "**Listeners** *(According to Icecast):* " + ' _' + str(mfr_json["listeners"]) + '_'
         await client.send_message(message.channel, text)
     elif message.content.startswith('!queue'):
+        await client.send_typing(message.channel)
         connectMySQL()
         cursor = engine.cursor()
         query = ("SELECT ID, songID, artist FROM queuelist")
@@ -101,6 +105,7 @@ async def on_message(message):
             retMSG = retMSG + "\n" + str(ID) + " | " + str(songID) + " | " + str(artist) + " | " + str(title)[2:len(str(title))-3]
         await client.send_message(message.channel, retMSG)
     elif message.content.startswith('!list'):
+        await client.send_typing(message.channel)
         if len(str(message.content)) >= 7:
             index = str(message.content)[str(message.content).find("!list") + 6:]
             try:
@@ -121,13 +126,16 @@ async def on_message(message):
         query = ("SELECT ID, artist, title FROM songs ORDER BY `artist` LIMIT " + str((int(index) - 1) * 10) + ", 10")
         cursor.execute(query)
         await client.send_message(message.channel, "**__Song List: Page " + str(index) + " of " + str(round(int(count)/10)) + "__**")
+        await client.send_typing(message.channel)
         await client.send_message(message.channel, "[ID | Artist | Title]")
         text = ""
+        await client.send_typing(message.channel)
         for (ID, artist, title) in cursor:
             text = text + "**" + str(ID) + "** | " + artist + " | " + title + "\n"
         await client.send_message(message.channel, text)
         cursor.close()
     elif message.content.startswith('!search'):
+        await client.send_typing(message.channel)
         if len(str(message.content)) == 7:
             await client.send_message(message.channel, "**I'm sorry, what was that? Didn't quite catch that.** \n Please enter your search query after the command. \n eg. `!search Rainbow Dash`")
         else:
@@ -140,10 +148,12 @@ async def on_message(message):
             await client.send_message(message.channel, "[ID | Artist | Title]")
             text = ""
             for (ID, artist, title) in cursor:
+                await client.send_typing(message.channel)
                 text = text + "**" + str(ID) + "** | " + artist + " | " + title + "\n"
             await client.send_message(message.channel, text)
             cursor.close()
     elif message.content.startswith('!request'):
+        await client.send_typing(message.channel)
         if len(str(message.content)) == 8:
             await client.send_message(message.channel, "**I just don't know what went wrong!** \n Please enter your requested song id after the command. \n eg. `!request 14982` \n _Remember: you can search for the song with the `!search` command!_")
         else:
@@ -174,20 +184,31 @@ async def on_message(message):
             else:
                 await client.send_message(message.channel, "I'm sorry, but requests are disabled for the moment!")
     elif message.content.startswith('!togglerequests'):
+        await client.send_typing(message.channel)
         if int(str(message.author.id)) in BOT_ADMINS:
             global REQUESTS_ENABLED
             REQUESTS_ENABLED = not REQUESTS_ENABLED
             await client.send_message(message.channel, "**REQUESTS ENABLED:** " + str(REQUESTS_ENABLED))
+        else:
+            await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
     elif message.content.startswith('!joinvoice'):
+        await client.send_typing(message.channel)
         if int(str(message.author.id)) in BOT_ADMINS:
             c = discord.utils.get(message.server.channels, id=message.author.voice_channel.id)
             global v
             v = await client.join_voice_channel(c)
+            await client.send_message(message.channel, "Successfully joined the voice channel!")
             player = v.create_ffmpeg_player("http://radio.pawprintradio.com/stream-128.mp3")
             player.start()
+        else:
+            await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
     elif message.content.startswith('!disconnectvoice'):
+        await client.send_typing(message.channel)
         if int(str(message.author.id)) in BOT_ADMINS:
             await v.disconnect()
+            await client.send_message(message.channel, "Successfully disconnected from the voice channel!")
+        else:
+            await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
 
 if BOT_USE_EMAIL:
     client.run(DISCORD_BOT_EMAIL, DISCORD_BOT_PASSWORD)
