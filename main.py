@@ -20,7 +20,7 @@ def connectMySQL():
     try:
         logger.info('Connecting to database...')
         global engine
-        engine = mysql.connector.connect(user=MYSQL_USERNAME, password=MYSQL_PASSWORD, host=MYSQL_IP, port=MYSQL_PORT, database=MYSQL_DATABASE)
+        engine = mysql.connector.connect(user=MYSQL_USERNAME, password=MYSQL_PASSWORD, host=MYSQL_IP, port=MYSQL_PORT, database=MYSQL_DATABASE, buffered=True)
         if engine.is_connected():
             logger.info('Connected to MySQL')
     except Error as e:
@@ -58,6 +58,7 @@ async def on_message(message):
         `!about` - general information about SilverleafBot
         `!nowplaying` - shows what is currently playing in the station
         `!listeners` - show the listener count according to Icecast
+        `!queue` - lists the upcoming songs in the radio dj
         `!list (index)` - list the songs in the radio database
         `!search <query>` - search for songs that contains the string
         `!request <id>` - request the song to be played in the station
@@ -85,6 +86,20 @@ async def on_message(message):
         mfr_json = getRadioMeta()
         text = "**Listeners** *(According to Icecast):* " + ' _' + str(mfr_json["listeners"]) + '_'
         await client.send_message(message.channel, text)
+    elif message.content.startswith('!queue'):
+        connectMySQL()
+        cursor = engine.cursor()
+        query = ("SELECT ID, songID, artist FROM queuelist")
+        cursor.execute(query)
+        cursorSecondary = engine.cursor()
+        retMSG = "__**Upcoming Songs in the Queue**__\n[Position | ID | Artist | Title]"
+        for (ID, songID, artist) in cursor:
+            querySecondary = ("SELECT title FROM songs WHERE ID LIKE " + str(songID))
+            cursorSecondary.execute(querySecondary)
+            for title in cursorSecondary:
+                t = title
+            retMSG = retMSG + "\n" + str(ID) + " | " + str(songID) + " | " + str(artist) + " | " + str(title)[2:len(str(title))-3]
+        await client.send_message(message.channel, retMSG)
     elif message.content.startswith('!list'):
         if len(str(message.content)) >= 7:
             index = str(message.content)[str(message.content).find("!list") + 6:]
