@@ -111,7 +111,7 @@ async def on_message(message):
             index = 1
         connectMySQL()
         cursor = engine.cursor()
-        cursorCount = engine.cursor(prepared=True)
+        cursorCount = engine.cursor()
         countQuery = ("SELECT COUNT(*) FROM songs")
         cursorCount.execute(countQuery)
         count = ""
