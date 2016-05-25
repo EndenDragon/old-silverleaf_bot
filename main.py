@@ -154,11 +154,14 @@ async def on_message(message):
             cursor.close()
     elif message.content.startswith('!request') or message.content.startswith('!req'):
         await client.send_typing(message.channel)
-        if len(str(message.content)) == 8:
+        if (len(str(message.content)) == 8 and message.content.startswith('!request')) or (len(str(message.content)) == 4 and message.content.startswith('!req')):
             await client.send_message(message.channel, "**I just don't know what went wrong!** \n Please enter your requested song id after the command. \n eg. `!request 14982` \n _Remember: you can search for the song with the `!search` command!_")
         else:
             if REQUESTS_ENABLED == True:
-                reqSONGID = str(message.content)[9:]
+                if message.content.startswith('!request'):
+                    reqSONGID = str(message.content)[9:]
+                else:
+                    reqSONGID = str(message.content)[5:]
                 reqUSERNAME = str(message.author.name)
                 connectMySQL()
                 cursorSong = engine.cursor()
