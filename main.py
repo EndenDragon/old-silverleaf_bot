@@ -152,7 +152,7 @@ async def on_message(message):
                 text = text + "**" + str(ID) + "** | " + artist + " | " + title + "\n"
             await client.send_message(message.channel, text)
             cursor.close()
-    elif message.content.startswith('!request'):
+    elif message.content.startswith('!request') or message.content.startswith('!req'):
         await client.send_typing(message.channel)
         if len(str(message.content)) == 8:
             await client.send_message(message.channel, "**I just don't know what went wrong!** \n Please enter your requested song id after the command. \n eg. `!request 14982` \n _Remember: you can search for the song with the `!search` command!_")
@@ -191,7 +191,7 @@ async def on_message(message):
             await client.send_message(message.channel, "**REQUESTS ENABLED:** " + str(REQUESTS_ENABLED))
         else:
             await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
-    elif message.content.startswith('!joinvoice'):
+    elif message.content.startswith('!joinvoice') or message.content.startswith('!jv'):
         await client.send_typing(message.channel)
         if int(str(message.author.id)) in BOT_ADMINS:
             c = discord.utils.get(message.server.channels, id=message.author.voice_channel.id)
