@@ -208,7 +208,7 @@ async def on_message(message):
             player.start()
         else:
             await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
-    elif message.content.startswith('!disconnectvoice'):
+    elif message.content.startswith('!disconnectvoice') or message.content.startswith('!dv'):
         await client.send_typing(message.channel)
         if int(str(message.author.id)) in BOT_ADMINS:
             await v.disconnect()
