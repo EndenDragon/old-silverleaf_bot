@@ -77,7 +77,7 @@ async def on_message(message):
         await client.send_typing(message.channel)
         out = subprocess.getoutput("git rev-parse --short master")
         about = """**Silverleaf 🤖** by EndenDragon
-        Git revision: `{0}` | URL: https://git.mane-frame.com/EndenDragon/silverleaf_bot/commit/{0}
+        Git revision: `{0}` | URL: https://git.pawprintradio.com/EndenDragon/silverleaf_bot/commit/{0}
         Made with :heart: for PawPrintRadio.
         http://www.pawprintradio.com/
         """.format(out)
