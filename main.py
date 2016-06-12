@@ -42,11 +42,14 @@ async def on_ready():
     print(client.user.name)
     print(client.user.id)
     print('------')
+    radioMeta = ""
     while True:
         mfr_json = getRadioMeta()
         text = str(mfr_json["title"])
-        status = Game(name=text)
-        await client.change_status(game=status, idle=False)
+        if text != radioMeta:
+            radioMeta = text
+            status = Game(name=text)
+            await client.change_status(game=status, idle=False)
         await asyncio.sleep(10)
 
 @client.event
