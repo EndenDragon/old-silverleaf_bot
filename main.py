@@ -41,6 +41,10 @@ async def on_ready():
     print('Logged in as')
     print(client.user.name)
     print(client.user.id)
+    print('')
+    print('Connected servers')
+    for x in client.servers:
+        print(x.name)
     print('------')
     radioMeta = ""
     while True:
@@ -213,6 +217,22 @@ async def on_message(message):
         if int(str(message.author.id)) in BOT_ADMINS:
             await v.disconnect()
             await client.send_message(message.channel, "Successfully disconnected from the voice channel!")
+        else:
+            await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
+    elif message.content.startswith('!eval'):
+        if int(str(message.author.id)) in BOT_ADMINS:
+            code = str(message.content)[6:]
+            code = code.strip('` ')
+            python = '```py\n{}\n```'
+            result = None
+            try:
+                result = exec(code)
+            except Exception as e:
+                await client.send_message(message.channel, python.format(type(e).__name__ + ': ' + str(e)))
+                return
+            if asyncio.iscoroutine(result):
+                result = await result
+            await client.send_message(message.channel, python.format(result))
         else:
             await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
 
