@@ -35,7 +35,7 @@ def getRadioMeta():
 
 @client.event
 async def on_ready():
-    connectMySQL()
+#    connectMySQL()
     print('------')
     print('Logged in as')
     print(client.user.name)
