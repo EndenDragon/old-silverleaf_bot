@@ -27,7 +27,7 @@ def connectMySQL():
         logger.info(e)
 
 def getRadioMeta():
-    response = urlopen('https://radio.pawprintradio.com/status-json.xsl')
+    response = urlopen('http://87.98.161.5:8000/status-json.xsl')
     xsl = response.read()
     mfr_json = json.loads(str(xsl.decode("utf-8")))
     mfr_json = mfr_json["icestats"]["source"]
