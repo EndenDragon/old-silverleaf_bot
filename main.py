@@ -27,7 +27,7 @@ def connectMySQL():
         logger.info(e)
 
 def getRadioMeta():
-    response = urlopen('http://radio.pawprintradio.com/status-json.xsl')
+    response = urlopen('https://radio.pawprintradio.com/status-json.xsl')
     xsl = response.read()
     mfr_json = json.loads(str(xsl.decode("utf-8")))
     mfr_json = mfr_json["icestats"]["source"]
@@ -208,7 +208,7 @@ async def on_message(message):
             global v
             v = await client.join_voice_channel(c)
             await client.send_message(message.channel, "Successfully joined the voice channel!")
-            player = v.create_ffmpeg_player("http://radio.pawprintradio.com/stream-128.mp3")
+            player = v.create_ffmpeg_player("http://radio.pawprintradio.com/stream")
             player.start()
         else:
             await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
