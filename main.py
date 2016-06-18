@@ -31,8 +31,7 @@ def getRadioMeta():
     xsl = response.read()
     mfr_json = json.loads(str(xsl.decode("utf-8")))
     mfr_json = mfr_json["icestats"]["source"]
-    mfr_json
-    return mfr_json.pop()
+    return mfr_json
 
 @client.event
 async def on_ready():
