@@ -72,6 +72,7 @@ async def on_message(message):
         `!togglerequests` - toggle requests functionality for the bot
         `!joinvoice` - joins the voice channel with the person who sent the command
         `!disconnectvoice` - disconnect from the voice channel
+        `!changeavatar <URL>` - change the bot's avatar to the url
 
         Command parameters: `<required>` `(optional)`
         """
@@ -202,7 +203,7 @@ async def on_message(message):
             await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
     elif message.content.startswith('!joinvoice') or message.content.startswith('!jv'):
         await client.send_typing(message.channel)
-        if int(str(message.author.id)) in BOT_ADMINS:
+        if int(str(message.author.id)) in BOT_ADMINS or int(str(message.author.voice_channel.id)) in TRUSTED_VOICE_CHANNELS:
             c = discord.utils.get(message.server.channels, id=message.author.voice_channel.id)
             global v
             v = await client.join_voice_channel(c)
@@ -232,6 +233,14 @@ async def on_message(message):
             if asyncio.iscoroutine(result):
                 result = await result
             await client.send_message(message.channel, python.format(result))
+        else:
+            await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
+    elif message.content.startswith('!changeavatar'):
+        await client.send_typing(message.channel)
+        if int(str(message.author.id)) in BOT_ADMINS:
+            f = urlopen(str(message.content)[13:])
+            await client.edit_profile(avatar=f.read())
+            await client.send_message(message.channel, "Successfully changed the avatar to " + str(message.content)[13:] + "!")
         else:
             await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
 
