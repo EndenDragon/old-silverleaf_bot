@@ -10,10 +10,13 @@ import mysql.connector
 import subprocess
 import time
 import datetime
+import sys
 
 client = discord.Client()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('SilverleafBot')
+
+currentDate = datetime.datetime.now().date()
 
 def connectMySQL():
     """ Connect to MySQL database """
@@ -41,12 +44,16 @@ async def on_ready():
     print(client.user.name)
     print(client.user.id)
     print('')
+    print('It is currently ' + str(currentDate))
+    print('')
     print('Connected servers')
     for x in client.servers:
         print(x.name)
     print('------')
     radioMeta = ""
     while True:
+        if currentDate != datetime.datetime.now().date():
+            sys.exit("Bot Shutting Down...")
         mfr_json = getRadioMeta()
         text = str(mfr_json["title"])
         if text != radioMeta:
@@ -219,28 +226,35 @@ async def on_message(message):
             await client.send_message(message.channel, "Successfully disconnected from the voice channel!")
         else:
             await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
-    elif message.content.startswith('!eval'):
-        if int(str(message.author.id)) in BOT_ADMINS:
-            code = str(message.content)[6:]
-            code = code.strip('` ')
-            python = '```py\n{}\n```'
-            result = None
-            try:
-                result = exec(code)
-            except Exception as e:
-                await client.send_message(message.channel, python.format(type(e).__name__ + ': ' + str(e)))
-                return
-            if asyncio.iscoroutine(result):
-                result = await result
-            await client.send_message(message.channel, python.format(result))
-        else:
-            await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
+    # elif message.content.startswith('!eval'):
+    #     if int(str(message.author.id)) in BOT_ADMINS:
+    #         code = str(message.content)[6:]
+    #         code = code.strip('` ')
+    #         python = '```py\n{}\n```'
+    #         result = None
+    #         try:
+    #             result = exec(code)
+    #         except Exception as e:
+    #             await client.send_message(message.channel, python.format(type(e).__name__ + ': ' + str(e)))
+    #             return
+    #         if asyncio.iscoroutine(result):
+    #             result = await result
+    #         await client.send_message(message.channel, python.format(result))
+    #     else:
+    #         await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
     elif message.content.startswith('!changeavatar'):
         await client.send_typing(message.channel)
         if int(str(message.author.id)) in BOT_ADMINS:
             f = urlopen(str(message.content)[13:])
             await client.edit_profile(avatar=f.read())
             await client.send_message(message.channel, "Successfully changed the avatar to " + str(message.content)[13:] + "!")
+        else:
+            await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
+    elif message.content.startswith('!restart'):
+        await client.send_typing(message.channel)
+        if int(str(message.author.id)) in BOT_ADMINS:
+            await client.send_message(message.channel, "Silverleaf is restarting...")
+            sys.exit("Bot Shutting Down...")
         else:
             await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
 
