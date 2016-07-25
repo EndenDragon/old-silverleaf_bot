@@ -80,6 +80,7 @@ async def on_message(message):
         `!joinvoice` - joins the voice channel with the person who sent the command
         `!disconnectvoice` - disconnect from the voice channel
         `!changeavatar <URL>` - change the bot's avatar to the url
+        `!restart` - restarts the bot
 
         Command parameters: `<required>` `(optional)`
         """
