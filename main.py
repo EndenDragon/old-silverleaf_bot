@@ -53,6 +53,7 @@ async def on_ready():
     radioMeta = ""
     while True:
         if currentDate != datetime.datetime.now().date():
+            await client.logout()
             sys.exit("Bot Shutting Down... (Daily Restart)")
         mfr_json = getRadioMeta()
         text = str(mfr_json["title"])
@@ -255,6 +256,7 @@ async def on_message(message):
         await client.send_typing(message.channel)
         if int(str(message.author.id)) in BOT_ADMINS:
             await client.send_message(message.channel, "Silverleaf is restarting...")
+            await client.logout()
             sys.exit("Bot Shutting Down... (User Invoked)")
         else:
             await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
