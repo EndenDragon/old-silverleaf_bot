@@ -13,7 +13,7 @@ import datetime
 import sys
 
 client = discord.Client()
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(filename='silverleafbot.log',level=logging.INFO,format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 logger = logging.getLogger('SilverleafBot')
 
 currentDate = datetime.datetime.now().date()
@@ -53,7 +53,7 @@ async def on_ready():
     radioMeta = ""
     while True:
         if currentDate != datetime.datetime.now().date():
-            sys.exit("Bot Shutting Down...")
+            sys.exit("Bot Shutting Down... (Daily Restart)")
         mfr_json = getRadioMeta()
         text = str(mfr_json["title"])
         if text != radioMeta:
@@ -71,10 +71,10 @@ async def on_message(message):
         `!about` - general information about SilverleafBot
         `!nowplaying` - shows what is currently playing in the station
         `!listeners` - show the listener count according to Icecast
-        `!queue` - lists the upcoming songs in the radio dj
-        `!list (index)` - list the songs in the radio database
-        `!search <query>` - search for songs that contains the string
-        `!request <id>` - request the song to be played in the station
+        ~~`!queue` - lists the upcoming songs in the radio dj~~
+        ~~`!list (index)` - list the songs in the radio database~~
+        ~~`!search <query>` - search for songs that contains the string~~
+        ~~`!request <id>` - request the song to be played in the station~~
         ----------------------
         `!togglerequests` - toggle requests functionality for the bot
         `!joinvoice` - joins the voice channel with the person who sent the command
@@ -255,7 +255,7 @@ async def on_message(message):
         await client.send_typing(message.channel)
         if int(str(message.author.id)) in BOT_ADMINS:
             await client.send_message(message.channel, "Silverleaf is restarting...")
-            sys.exit("Bot Shutting Down...")
+            sys.exit("Bot Shutting Down... (User Invoked)")
         else:
             await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
 
