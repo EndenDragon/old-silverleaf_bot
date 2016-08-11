@@ -1,6 +1,6 @@
 from config import *
 import discord
-from discord import Game, Channel
+from discord import Game, Channel, Server
 import asyncio
 import logging
 from urllib.request import urlopen
@@ -17,6 +17,8 @@ logging.basicConfig(filename='silverleafbot.log',level=logging.INFO,format='%(as
 logger = logging.getLogger('SilverleafBot')
 
 currentDate = datetime.datetime.now().date()
+streamingURL = ""
+currentlyStreaming = False
 
 def connectMySQL():
     """ Connect to MySQL database """
@@ -51,6 +53,8 @@ async def on_ready():
         print(x.name)
     print('------')
     radioMeta = ""
+    global currentlyStreaming
+    currentlyStreaming = False
     while True:
         if currentDate != datetime.datetime.now().date():
             await client.logout()
@@ -59,7 +63,13 @@ async def on_ready():
         text = str(mfr_json["title"])
         if text != radioMeta:
             radioMeta = text
-            status = Game(name=text)
+            global currentlyStreaming
+            if currentlyStreaming:
+                global streamingURL
+                status = Game(name=text, url=streamingURL, type=1)
+            else:
+                global streamingURL
+                status = Game(name=text, type=0)
             await client.change_status(game=status, idle=False)
         await asyncio.sleep(10)
 
@@ -78,6 +88,7 @@ async def on_message(message):
         ~~`!request <id>` - request the song to be played in the station~~
         ----------------------
         `!togglerequests` - toggle requests functionality for the bot
+        `!stream <Twitch Name/off> (username)` - Twitch streaming, username optional
         `!joinvoice` - joins the voice channel with the person who sent the command
         `!disconnectvoice` - disconnect from the voice channel
         `!changeavatar <URL>` - change the bot's avatar to the url
@@ -258,6 +269,42 @@ async def on_message(message):
             await client.send_message(message.channel, "Silverleaf is restarting...")
             await client.logout()
             sys.exit("Bot Shutting Down... (User Invoked)")
+        else:
+            await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
+    elif message.content.startswith('!stream'):
+        await client.send_typing(message.channel)
+        if int(str(message.author.id)) in BOT_ADMINS:
+            global streamingURL
+            if len(message.content.split()) == 2 or len(message.content.split()) == 3:
+                streamingURL = "https://www.twitch.tv/" + str(message.content.split()[1])
+                mfr_json = getRadioMeta()
+                text = str(mfr_json["title"])
+                if str(message.content.split()[1]).lower() == "off":
+                    global currentlyStreaming
+                    currentlyStreaming = False
+                    status = Game(name=text, type=0)
+                    await client.change_status(game=status, idle=False)
+                    await client.send_message(message.channel, "Stream has stopped.")
+                else:
+                    global currentlyStreaming
+                    currentlyStreaming = True
+                    status = discord.Game(name=text, url=streamingURL, type=1)
+                    await client.change_status(game=status, idle=False)
+                    try:
+                        announChan = message.server.get_channel(str(ANNOUNCEMENT_CHANNEL_ID))
+                    except:
+                        announChan = None
+                    if announChan is None:
+                        if len(message.content.split()) == 2:
+                            await client.send_message(message.channel, "Hey! **" + message.author.name + " is now streaming!** Check it out over here- " + streamingURL)
+                        elif len(message.content.split()) == 3:
+                            await client.send_message(message.channel, "Hey! **" + message.content.split()[2] + " is now streaming!** Check it out over here- " + streamingURL)
+                    elif len(message.content.split()) == 2:
+                        await client.send_message(announChan, "Hey @everyone! **" + message.author.name + " is now streaming!** Check it out over here- " + streamingURL)
+                    elif len(message.content.split()) == 3:
+                        await client.send_message(announChan, "Hey @everyone! **" + message.content.split()[2] + " is now streaming!** Check it out over here- " + streamingURL)
+            else:
+                await client.send_message(message.channel, "Invalid stream command syntax! Please enter a username or `off`.")
         else:
             await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
 
