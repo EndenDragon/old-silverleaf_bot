@@ -55,6 +55,11 @@ async def on_ready():
     radioMeta = ""
     global currentlyStreaming
     currentlyStreaming = False
+    c = discord.utils.get(client.get_server(str(MAIN_SERVER)).channels, id=str(MUSIC_CHANNEL), type=discord.ChannelType.voice)
+    global v
+    v = await client.join_voice_channel(c)
+    player = v.create_ffmpeg_player(MUSIC_STREAM_URL)
+    player.start()
     while True:
         if currentDate != datetime.datetime.now().date():
             await client.logout()
@@ -228,7 +233,7 @@ async def on_message(message):
             global v
             v = await client.join_voice_channel(c)
             await client.send_message(message.channel, "Successfully joined the voice channel!")
-            player = v.create_ffmpeg_player("http://radio.pawprintradio.com/stream")
+            player = v.create_ffmpeg_player(MUSIC_STREAM_URL)
             player.start()
         else:
             await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
