@@ -6,7 +6,6 @@ import logging
 from urllib.request import urlopen
 import urllib.parse
 import json
-import mysql.connector
 import subprocess
 import time
 import datetime
@@ -20,23 +19,29 @@ currentDate = datetime.datetime.now().date()
 streamingURL = ""
 currentlyStreaming = False
 
-def connectMySQL():
-    """ Connect to MySQL database """
-    try:
-        logger.info('Connecting to database...')
-        global engine
-        engine = mysql.connector.connect(user=MYSQL_USERNAME, password=MYSQL_PASSWORD, host=MYSQL_IP, port=MYSQL_PORT, database=MYSQL_DATABASE, buffered=True)
-        if engine.is_connected():
-            logger.info('Connected to MySQL')
-    except Error as e:
-        logger.info(e)
-
 def getRadioMeta():
     response = urlopen('https://radio.pawprintradio.com/icecast/status-json.xsl')
     xsl = response.read()
     mfr_json = json.loads(str(xsl.decode("utf-8")))
     mfr_json = mfr_json["icestats"]["source"]
     return mfr_json
+
+def getReqSongs(count=False):
+    songListEndpoint = "https://radio.pawprintradio.com/api/requests/list/id/1"
+    response = urlopen(songListEndpoint).read()
+    response = json.loads(str(response.decode("utf-8")))
+    response = response["result"]
+    if count:
+        return len(response)
+    return response
+
+def submitReqSong(id):
+    songListEndpoint = "https://radio.pawprintradio.com/api/requests/submit/id/1/song_id/"
+    response = urlopen(songListEndpoint+str(id)).read()
+    response = json.loads(str(response.decode("utf-8")))
+    if response["status"] == "success":
+        return {'status': True}
+    return {'status': False, 'error': response["error"]}
 
 @client.event
 async def on_ready():
@@ -88,9 +93,9 @@ async def on_message(message):
         `!nowplaying` - shows what is currently playing in the station
         `!listeners` - show the listener count according to Icecast
         ~~`!queue` - lists the upcoming songs in the radio dj~~
-        ~~`!list (index)` - list the songs in the radio database~~
-        ~~`!search <query>` - search for songs that contains the string~~
-        ~~`!request <id>` - request the song to be played in the station~~
+        `!list (index)` - list the songs in the radio database
+        `!search <query>` - search for songs that contains the string
+        `!request <id>` - request the song to be played in the station
         ----------------------
         `!togglerequests` - toggle requests functionality for the bot
         `!stream <Twitch Name/off> (username)` - Twitch streaming, username optional
@@ -146,44 +151,33 @@ async def on_message(message):
                 index = 1
         else:
             index = 1
-        connectMySQL()
-        cursor = engine.cursor()
-        cursorCount = engine.cursor()
-        countQuery = ("SELECT COUNT(*) FROM songs")
-        cursorCount.execute(countQuery)
-        count = ""
-        for (x) in cursorCount:
-            count = x
-        count = str(count)[1:len(count)-3]
-        query = ("SELECT ID, artist, title FROM songs ORDER BY `artist` LIMIT " + str((int(index) - 1) * 10) + ", 10")
-        cursor.execute(query)
+        count = getReqSongs(count=True)
         await client.send_message(message.channel, "**__Song List: Page " + str(index) + " of " + str(round(int(count)/10)) + "__**")
         await client.send_typing(message.channel)
         await client.send_message(message.channel, "[ID | Artist | Title]")
         text = ""
         await client.send_typing(message.channel)
-        for (ID, artist, title) in cursor:
-            text = text + "**" + str(ID) + "** | " + artist + " | " + title + "\n"
+        t = getReqSongs()
+        t = t[(int(float(index)) - 1) * 10:(int(float(index)) - 1)*10+10]
+        for x in t:
+            text = text + "**" + str(x["request_song_id"]) + "** | " + x["song"]["artist"] + " | " + x["song"]["title"] + "\n"
         await client.send_message(message.channel, text)
-        cursor.close()
     elif message.content.startswith('!search'):
         await client.send_typing(message.channel)
         if len(str(message.content)) == 7:
             await client.send_message(message.channel, "**I'm sorry, what was that? Didn't quite catch that.** \n Please enter your search query after the command. \n eg. `!search Rainbow Dash`")
         else:
-            connectMySQL()
-            cursor = engine.cursor()
             query = str(message.content)[8:]
-            command = ("SELECT ID, artist, title FROM songs WHERE `artist` COLLATE UTF8_GENERAL_CI LIKE '%%" + str(query) + "%%' OR `title` COLLATE UTF8_GENERAL_CI LIKE '%%" + str(query) + "%%' LIMIT 15")
-            cursor.execute(command)
             await client.send_message(message.channel, "**__Search Songs: " + query + "__**")
             await client.send_message(message.channel, "[ID | Artist | Title]")
             text = ""
-            for (ID, artist, title) in cursor:
-                await client.send_typing(message.channel)
-                text = text + "**" + str(ID) + "** | " + artist + " | " + title + "\n"
+            await client.send_typing(message.channel)
+            count = 0
+            for x in getReqSongs():
+                if query.lower() in x["song"]["title"].lower() or query.lower() in x["song"]["artist"].lower() and count < 6:
+                    text = text + "**" + str(x["request_song_id"]) + "** | " + x["song"]["artist"] + " | " + x["song"]["title"] + "\n"
+                    count = count + 1
             await client.send_message(message.channel, text)
-            cursor.close()
     elif message.content.startswith('!request') or message.content.startswith('!req'):
         await client.send_typing(message.channel)
         if (len(str(message.content)) == 8 and message.content.startswith('!request')) or (len(str(message.content)) == 4 and message.content.startswith('!req')):
@@ -194,28 +188,21 @@ async def on_message(message):
                     reqSONGID = str(message.content)[9:]
                 else:
                     reqSONGID = str(message.content)[5:]
-                reqUSERNAME = str(message.author.name)
-                connectMySQL()
-                cursorSong = engine.cursor()
-                songQuery = ("SELECT ID, artist, title FROM songs WHERE `ID` LIKE  " + str(int(reqSONGID)))
-                cursorSong.execute(songQuery)
-                x = None
-                for (ID, artist, title) in cursorSong:
-                    x = "(#" + str(ID) + ") " + title + ", by " + artist
-                if x == None:
+                a = None
+                for x in getReqSongs():
+                    if int(float(reqSONGID)) == int(float(x["request_song_id"])):
+                        a = "(#" + str(x["request_song_id"]) + ") " + x["song"]["title"] + ", by " + x["song"]["artist"]
+                if a == None:
                     await client.send_message(message.channel, "I'm sorry, this song does not exist in the database!")
                 else:
                     data = {
-                        'reqSONGID' : reqSONGID,
-                        'reqUSERNAME' : reqUSERNAME
+                        'reqSONGID' : reqSONGID
                     }
-                    data = bytes( urllib.parse.urlencode( data ).encode() )
-                    handler = urllib.request.urlopen( REQUESTS_POST_URL, data );
-                    results = handler.read().decode( 'utf-8' )
-                    if str(results) == "1":
-                        await client.send_message(message.channel, "Good news " + reqUSERNAME + "! Your song of: **" + x + "** has been submitted! Rest assured, keep listening to the radio as your song might be played after the next few songs!")
+                    post = submitReqSong(reqSONGID)
+                    if post['status'] == True:
+                        await client.send_message(message.channel, "Good news " + str(message.author.name) + "! Your song of: **" + a + "** has been submitted! Rest assured, keep listening to the radio as your song might be played after the next few songs!")
                     else:
-                        await client.send_message(message.channel, results)
+                        await client.send_message(message.channel, post['error'])
             else:
                 await client.send_message(message.channel, "I'm sorry, but requests are disabled for the moment!")
     elif message.content.startswith('!togglerequests'):
@@ -244,22 +231,6 @@ async def on_message(message):
             await client.send_message(message.channel, "Successfully disconnected from the voice channel!")
         else:
             await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
-    # elif message.content.startswith('!eval'):
-    #     if int(str(message.author.id)) in BOT_ADMINS:
-    #         code = str(message.content)[6:]
-    #         code = code.strip('` ')
-    #         python = '```py\n{}\n```'
-    #         result = None
-    #         try:
-    #             result = exec(code)
-    #         except Exception as e:
-    #             await client.send_message(message.channel, python.format(type(e).__name__ + ': ' + str(e)))
-    #             return
-    #         if asyncio.iscoroutine(result):
-    #             result = await result
-    #         await client.send_message(message.channel, python.format(result))
-    #     else:
-    #         await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
     elif message.content.startswith('!changeavatar'):
         await client.send_typing(message.channel)
         if int(str(message.author.id)) in BOT_ADMINS:
@@ -312,6 +283,12 @@ async def on_message(message):
                 await client.send_message(message.channel, "Invalid stream command syntax! Please enter a username or `off`.")
         else:
             await client.send_message(message.channel, "I'm sorry, this is an **admin only** command!")
+    elif message.content.startswith('!hug'):
+        mentions = message.mentions
+        members = ""
+        for x in mentions:
+            members = members + " " + x.mention
+        await client.send_message(message.channel, ":heartbeat: *Hugs " + members + "!* :heartbeat:")
 
 if BOT_USE_EMAIL:
     client.run(DISCORD_BOT_EMAIL, DISCORD_BOT_PASSWORD)
