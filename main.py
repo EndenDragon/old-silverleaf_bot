@@ -24,7 +24,8 @@ def getRadioMeta():
     xsl = response.read()
     mfr_json = json.loads(str(xsl.decode("utf-8")))
     mfr_json = mfr_json["icestats"]["source"]
-    return mfr_json
+    mfr_json.pop()
+    return mfr_json[0]
 
 def getReqSongs(count=False):
     songListEndpoint = "https://radio.pawprintradio.com/api/requests/list/id/1"
