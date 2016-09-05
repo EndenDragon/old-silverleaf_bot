@@ -35,8 +35,8 @@ def getReqSongs(count=False):
     return response
 
 def submitReqSong(id):
-    songListEndpoint = "https://radio.pawprintradio.com/api/requests/submit/id/1/song_id/"
-    response = urlopen(songListEndpoint+str(id)).read()
+    songListEndpoint = "https://radio.pawprintradio.com/api/requests/submit/id/1/song_id/" + str(id) + "?key=" + AZURACAST_API_KEY
+    response = urlopen(songListEndpoint).read()
     response = json.loads(str(response.decode("utf-8")))
     if response["status"] == "success":
         return {'status': True}
@@ -44,7 +44,6 @@ def submitReqSong(id):
 
 @client.event
 async def on_ready():
-#    connectMySQL()
     print('------')
     print('Logged in as')
     print(client.user.name)
