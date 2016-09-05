@@ -20,12 +20,10 @@ streamingURL = ""
 currentlyStreaming = False
 
 def getRadioMeta():
-    response = urlopen('https://radio.pawprintradio.com/icecast/status-json.xsl')
+    response = urlopen('https://pawprintradio.com/update_radio_subtxt/json')
     xsl = response.read()
     mfr_json = json.loads(str(xsl.decode("utf-8")))
-    mfr_json = mfr_json["icestats"]["source"]
-    mfr_json.pop()
-    return mfr_json[0]
+    return mfr_json
 
 def getReqSongs(count=False):
     songListEndpoint = "https://radio.pawprintradio.com/api/requests/list/id/1"
@@ -71,7 +69,7 @@ async def on_ready():
             await client.logout()
             sys.exit("Bot Shutting Down... (Daily Restart)")
         mfr_json = getRadioMeta()
-        text = str(mfr_json["title"])
+        text = str(mfr_json["text"])
         if text != radioMeta:
             radioMeta = text
             global currentlyStreaming
@@ -120,7 +118,7 @@ async def on_message(message):
     elif message.content.startswith('!nowplaying') or message.content.startswith('!np'):
         await client.send_typing(message.channel)
         mfr_json = getRadioMeta()
-        text = "**Now Playing:** " + str(mfr_json["title"])
+        text = "**Now Playing:** " + str(mfr_json["text"])
         await client.send_message(message.channel, text)
     elif message.content.startswith('!listeners'):
         await client.send_typing(message.channel)
@@ -255,7 +253,7 @@ async def on_message(message):
             if len(message.content.split()) == 2 or len(message.content.split()) == 3:
                 streamingURL = "https://www.twitch.tv/" + str(message.content.split()[1])
                 mfr_json = getRadioMeta()
-                text = str(mfr_json["title"])
+                text = str(mfr_json["text"])
                 if str(message.content.split()[1]).lower() == "off":
                     global currentlyStreaming
                     currentlyStreaming = False
