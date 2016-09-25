@@ -26,7 +26,7 @@ def getRadioMeta():
     return mfr_json
 
 def getReqSongs(count=False):
-    songListEndpoint = "https://radio.pawprintradio.com/api/requests/list/id/1"
+    songListEndpoint = "https://radio.pawprintradio.com/api/requests/1/list"
     response = urlopen(songListEndpoint).read()
     response = json.loads(str(response.decode("utf-8")))
     response = response["result"]
@@ -35,8 +35,11 @@ def getReqSongs(count=False):
     return response
 
 def submitReqSong(id):
-    songListEndpoint = "https://radio.pawprintradio.com/api/requests/submit/id/1/song_id/" + str(id) + "?key=" + AZURACAST_API_KEY
-    response = urlopen(songListEndpoint).read()
+    songListEndpoint = "https://radio.pawprintradio.com/api/requests/1/submit/" + str(id) + "?key=" + AZURACAST_API_KEY
+    try:
+        response = urlopen(songListEndpoint).read()
+    except urllib.error.HTTPError as error:
+        response = error.read()
     response = json.loads(str(response.decode("utf-8")))
     if response["status"] == "success":
         return {'status': True}
